@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>十九岁：流动的骨骼博物馆</title>
+    <style>
+        :root {
+            --bg-dark: #050508;
+            --accent-gold: #bfa17a;
+            --soft-glow: rgba(191, 161, 122, 0.2);
+        }
+
+        body, html { margin: 0; padding: 0; background-color: var(--bg-dark); color: #f0f0f0; font-family: "Source Han Serif CN", serif; overflow-x: hidden; }
+
+        /* --- 之前的星空层 (保留) --- */
+        .space-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at center, #0d0d1a 0%, #050508 100%); }
+        .star { position: absolute; background: white; border-radius: 50%; opacity: 0.4; animation: twinkle var(--duration) infinite; }
+
+        /* --- 首页画廊 (保留你调试好的亮度) --- */
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; max-width: 800px; margin: 60px auto; }
+        .museum-item img { 
+            width: 100%; aspect-ratio: 1/1; object-fit: cover;
+            filter: grayscale(0.4) brightness(0.85); 
+            border: 1px solid rgba(191, 161, 122, 0.3); 
+            transition: 0.8s ease; cursor: pointer;
+        }
+        .museum-item:hover img { filter: grayscale(0) brightness(1); box-shadow: 0 0 30px var(--soft-glow); border-color: var(--accent-gold); }
+
+        /* --- 核心唤醒层 (回归你最满意的粒子柔光感) --- */
+        #awakening-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); display: none; z-index: 1000; flex-direction: column; justify-content: center; align-items: center; }
+        
+        .grid-container { 
+            width: 80vh; height: 80vh; aspect-ratio: 1 / 1;
+            display: none; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+        }
+        .grid-cell { 
+            background-size: 300% 300%; 
+            /* 回归柔光感层：粒子感亮度压低至 1.2，高模糊度 */
+            filter: blur(25px) brightness(1.2); 
+            opacity: 0; 
+            transition: opacity 3s cubic-bezier(0.16, 1, 0.3, 1), filter 3s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: zoom-in;
+        }
+        .grid-cell.active { filter: blur(0px) brightness(1); opacity: 1; }
+
+        /* --- 沉浸式阅读层 (新增缓缓浮起效果) --- */
+        #reader-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; display: none; background: #000; }
+        
+        .reader-container {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 85vh; height: 85vh; aspect-ratio: 1 / 1;
+        }
+
+        .reader-content { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: 300% 300%;
+            border: 1px solid var(--accent-gold);
+            box-shadow: 0 0 50px var(--soft-glow);
+            opacity: 0; 
+            /* 缓缓浮起的核心动画：y轴偏移 + 透明度 */
+            transform: translateY(20px);
+            transition: opacity 1.5s ease, transform 1.5s ease;
+        }
+        .reader-content.show { opacity: 1; transform: translateY(0); }
+
+        /* 点击交互区 */
+        .click-zone { position: absolute; top: 0; height: 100%; z-index: 2100; }
+        .zone-prev { left: 0; width: 30%; cursor: w-resize; }
+        .zone-next { right: 0; width: 30%; cursor: e-resize; }
+        .zone-close { left: 30%; width: 40%; cursor: zoom-out; }
+
+        @keyframes breathe { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.7; } }
+        .close-btn { position: absolute; top: 25px; right: 45px; color: var(--accent-gold); font-size: 35px; cursor: pointer; z-index: 3000; }
+    </style>
+</head>
+<body>
+
+    <div class="space-bg" id="space"></div>
+
+    <div class="gallery-section">
+        <h2 style="font-weight: 200; letter-spacing: 15px; color: var(--accent-gold); text-align:center;">流动的骨骼</h2>
+        <div class="gallery-grid">
+            <div class="museum-item" onclick="openMuseum(0)"><img src="base1.jpg"></div>
+            <div class="museum-item" onclick="openMuseum(1)"><img src="base2.jpg"></div>
+            <div class="museum-item" onclick="openMuseum(2)"><img src="base3.jpg"></div>
+            <div class="museum-item" onclick="openMuseum(3)"><img src="base4.jpg"></div>
+        </div>
+    </div>
+
+    <div id="awakening-overlay">
+        <span class="close-btn" onclick="closeAll()">&times;</span>
+        <div id="prompt" onclick="assemble()" style="color:var(--accent-gold); cursor:pointer; letter-spacing:10px; animation: breathe 3s infinite;">点击此处 · 唤醒骨骼</div>
+        <div class="grid-container" id="grid-container">
+            <script>for(let i=0; i<9; i++) document.write(`<div class="grid-cell" id="cell-${i}" onclick="enterReader(${i})"></div>`);</script>
+        </div>
+    </div>
+
+    <div id="reader-view">
+        <div class="click-zone zone-prev" onclick="changeBlock(-1)"></div>
+        <div class="click-zone zone-close" onclick="exitReader()"></div>
+        <div class="click-zone zone-next" onclick="changeBlock(1)"></div>
+        
+        <div class="reader-container">
+            <div class="reader-content" id="img-back"></div>
+            <div class="reader-content show" id="img-front"></div>
+        </div>
+    </div>
+
+    <script>
+        let curCover = 0, curBlock = 0;
+
+        // 星空初始化
+        const space = document.getElementById('space');
+        for(let i=0; i<120; i++){
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = star.style.height = Math.random()*2+'px';
+            star.style.left = Math.random()*100+'%'; star.style.top = Math.random()*100+'%';
+            star.style.setProperty('--duration', Math.random()*3+2+'s');
+            space.appendChild(star);
+        }
+
+        function openMuseum(idx) {
+            curCover = idx;
+            document.getElementById('awakening-overlay').style.display = 'flex';
+            document.getElementById('grid-container').style.display = 'none';
+            document.getElementById('prompt').style.display = 'block';
+        }
+
+        function assemble() {
+            document.getElementById('prompt').style.display = 'none';
+            const container = document.getElementById('grid-container');
+            container.style.display = 'grid';
+            for(let i=0; i<9; i++) {
+                const cell = document.getElementById(`cell-${i}`);
+                cell.style.backgroundImage = `url(cover${curCover + 1}.jpg)`;
+                cell.style.backgroundPosition = `${(i % 3) * 50}% ${Math.floor(i / 3) * 50}%`;
+                // 恢复那种慢慢汇聚的延迟感
+                setTimeout(() => cell.classList.add('active'), i * 150);
+            }
+        }
+
+        function enterReader(idx) {
+            curBlock = idx;
+            const front = document.getElementById('img-front');
+            front.style.backgroundImage = `url(cover${curCover + 1}.jpg)`;
+            front.style.backgroundPosition = `${(curBlock % 3) * 50}% ${Math.floor(curBlock / 3) * 50}%`;
+            document.getElementById('reader-view').style.display = 'block';
+        }
+
+        function changeBlock(step) {
+            const front = document.getElementById('img-front');
+            const back = document.getElementById('img-back');
+
+            // 固定当前页在背景，取消过渡
+            back.style.transition = 'none';
+            back.style.backgroundImage = front.style.backgroundImage;
+            back.style.backgroundPosition = front.style.backgroundPosition;
+            back.style.opacity = '1';
+            back.style.transform = 'translateY(0)';
+
+            // 前景页重置并移动到下方，准备“浮起”
+            front.style.transition = 'none';
+            front.classList.remove('show');
+            
+            curBlock = (curBlock + step + 9) % 9;
+            
+            // 触发浮起动画
+            setTimeout(() => {
+                front.style.transition = 'opacity 1.5s ease, transform 1.5s ease';
+                front.style.backgroundPosition = `${(curBlock % 3) * 50}% ${Math.floor(curBlock / 3) * 50}%`;
+                front.classList.add('show');
+                
+                // 背景页缓缓消失
+                back.style.transition = 'opacity 1.5s ease';
+                back.style.opacity = '0';
+            }, 50);
+        }
+
+        function exitReader() { document.getElementById('reader-view').style.display = 'none'; }
+        function closeAll() { document.getElementById('awakening-overlay').style.display = 'none'; exitReader(); }
+    </script>
+</body>
+</html>
