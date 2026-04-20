@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fließende Gebein | 十九岁诗歌博物馆</title>
+    <style>
+        :root {
+            --bg-dark: #050508;
+            --accent-gold: #bfa17a;
+            --soft-glow: rgba(191, 161, 122, 0.2);
+        }
+
+        body, html { margin: 0; padding: 0; background-color: var(--bg-dark); color: #f0f0f0; font-family: "Source Han Serif CN", serif; overflow-x: hidden; }
+
+        /* --- 背景 --- */
+        .space-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at center, #0d0d1a 0%, #050508 100%); }
+        .star { position: absolute; background: white; border-radius: 50%; opacity: 0.4; animation: twinkle var(--duration) infinite; }
+
+        /* --- 首页画廊 --- */
+        .gallery-section { padding: 60px 20px; display: flex; flex-direction: column; align-items: center; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 40px; max-width: 500px; width: 90%; margin-top: 40px; }
+        .museum-item { text-align: center; }
+        .museum-item img { 
+            width: 100%; aspect-ratio: 1/1; object-fit: cover;
+            filter: grayscale(0.4) brightness(0.85); 
+            border: 1px solid rgba(191, 161, 122, 0.3); 
+            transition: 0.8s ease; cursor: pointer;
+        }
+        .chapter-title { color: var(--accent-gold); letter-spacing: 5px; margin-top: 15px; font-size: 0.85rem; opacity: 0.8; font-weight: 200; }
+
+        /* --- 唤醒层 --- */
+        #awakening-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); display: none; z-index: 1000; flex-direction: column; justify-content: center; align-items: center; }
+        .grid-container { width: 90vw; height: 90vw; max-width: 80vh; max-height: 80vh; display: none; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+        .grid-cell { background-size: 300% 300%; filter: blur(25px) brightness(1.2); opacity: 0; transition: 3s; cursor: zoom-in; border: 0.5px solid rgba(255,255,255,0.05); }
+        .grid-cell.active { filter: blur(0px) brightness(1); opacity: 1; }
+
+        /* --- 阅读层（关键修复：适配手机全屏） --- */
+        #reader-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; display: none; background: #000; }
+        .reader-container { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 95vw; height: 95vw; /* 默认宽度优先 */
+            max-width: 90vh; max-height: 90vh; /* 防止高度溢出 */
+            aspect-ratio: 1/1; 
+        }
+        .reader-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: 300% 300%; border: 1px solid var(--accent-gold); box-shadow: 0 0 30px var(--soft-glow); opacity: 0; transform: translateY(10px); transition: 1s ease; }
+        .reader-content.show { opacity: 1; transform: translateY(0); }
+
+        /* 终章专用样式 */
+        .c3-full-img {
+            background-size: contain !important;
+            background-repeat: no-repeat;
+            background-position: center;
+            clip-path: inset(0 0 100% 0); 
+            transition: clip-path 1.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            border: none !important;
+        }
+
+        /* 致谢页适配 */
+        #thanks-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,8,0.98); z-index: 3000; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: 2s; }
+        .thanks-content { max-width: 600px; line-height: 1.8; letter-spacing: 2px; color: #d0d0d0; font-size: 0.9rem; }
+        .thanks-content h3 { color: var(--accent-gold); font-weight: 200; margin-bottom: 20px; }
+
+        .click-zone { position: absolute; top: 0; height: 100%; z-index: 2100; }
+        .zone-prev { left: 0; width: 25%; }
+        .zone-next { right: 0; width: 25%; }
+        .zone-close { left: 25%; width: 50%; }
+
+        @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.7; } }
+        .close-btn { position: absolute; top: 20px; right: 30px; color: var(--accent-gold); font-size: 30px; cursor: pointer; z-index: 4000; }
+    </style>
+</head>
+<body>
+
+    <div class="space-bg" id="space"></div>
+
+    <div class="gallery-section">
+        <h2 style="font-weight: 200; letter-spacing: 10px; color: var(--accent-gold); margin-bottom: 30px;">Fließende Gebein</h2>
+        <div class="gallery-grid">
+            <div class="museum-item" onclick="openMuseum(0)"><img src="cover1.jpg"><div class="chapter-title">第一章：震颤 · 破壳</div></div>
+            <div class="museum-item" onclick="openMuseum(1)"><img src="cover2.jpg"><div class="chapter-title">第二章：缝补 · 呼吸</div></div>
+            <div class="museum-item" onclick="openMuseum(2)"><img src="cover3.jpg"><div class="chapter-title">第三章：奔涌 · 回响</div></div>
+            <div class="museum-item" onclick="openMuseum(3)"><img src="cover4.jpg"><div class="chapter-title">终章：炽烈 · 归途</div></div>
+        </div>
+    </div>
+
+    <div id="awakening-overlay">
+        <span class="close-btn" onclick="closeAll()">&times;</span>
+        <div id="prompt" onclick="assemble()" style="color:var(--accent-gold); cursor:pointer; letter-spacing:5px;">点击此处 · 唤醒骨骼</div>
+        <div class="grid-container" id="grid-container">
+            <script>for(let i=0; i<9; i++) document.write(`<div class="grid-cell" id="cell-${i}" onclick="enterReader(${i})"></div>`);</script>
+        </div>
+    </div>
+
+    <div id="reader-view">
+        <div id="nav-zones">
+            <div class="click-zone zone-prev" onclick="changeBlock(-1)"></div>
+            <div class="click-zone zone-close" onclick="exitReader()"></div>
+            <div class="click-zone zone-next" onclick="changeBlock(1)"></div>
+        </div>
+        <div id="c3-click-zone" style="position:absolute; width:100%; height:100%; z-index:2500; display:none;" onclick="nextC3Step()"></div>
+        <div class="reader-container">
+            <div class="reader-content" id="img-back"></div>
+            <div class="reader-content show" id="img-front"></div>
+        </div>
+    </div>
+
+    <div id="thanks-screen">
+        <span class="close-btn" onclick="location.reload()">&times;</span>
+        <div class="thanks-content">
+            <h3>我居然十九岁了</h3>
+            <p>正如我在活动发起里所说的，关于那些流动的骨骼，关于破壳而出的瞬间，终于跨过不同时空，相遇在此时。<br><br>
+               过去一个月我无数次诵读每一节诗，更感激这只漂流瓶能流经福州、北京、杭州、长沙、重庆、天津……<br><br>
+               以诗会友，一期一会。<br>
+               亲爱的朋友，我们一定会记得这个春天。
+            </p>
+            <div style="margin-top:30px; font-size:0.75rem; color:var(--accent-gold); opacity:0.6;">致谢 Luna：赋予骨骼流动的色彩</div>
+        </div>
+    </div>
+
+    <script>
+        let curCover = 0, curBlock = 0, c3Step = 0;
+        const c3Clips = ["inset(0 0 75% 0)", "inset(0 0 50% 0)", "inset(0 0 25% 0)", "inset(0 0 0% 0)"];
+
+        // 星空
+        const space = document.getElementById('space');
+        for(let i=0; i<80; i++){
+            const star = document.createElement('div'); star.className = 'star';
+            star.style.width = star.style.height = Math.random()*2+'px';
+            star.style.left = Math.random()*100+'%'; star.style.top = Math.random()*100+'%';
+            star.style.setProperty('--duration', Math.random()*3+2+'s'); space.appendChild(star);
+        }
+
+        function openMuseum(idx) {
+            curCover = idx;
+            if (idx === 3) { enterC3Reader(); } 
+            else {
+                document.getElementById('awakening-overlay').style.display = 'flex';
+                document.getElementById('grid-container').style.display = 'none';
+                document.getElementById('prompt').style.display = 'block';
+            }
+        }
+
+        function assemble() {
+            document.getElementById('prompt').style.display = 'none';
+            const container = document.getElementById('grid-container');
+            container.style.display = 'grid';
+            for(let i=0; i<9; i++) {
+                const cell = document.getElementById(`cell-${i}`);
+                cell.style.backgroundImage = `url(cover${curCover + 1}.jpg)`;
+                cell.style.backgroundPosition = `${(i % 3) * 50}% ${Math.floor(i / 3) * 50}%`;
+                cell.classList.remove('active'); setTimeout(() => cell.classList.add('active'), i * 100);
+            }
+        }
+
+        function enterReader(idx) {
+            curBlock = idx;
+            document.getElementById('nav-zones').style.display = 'block';
+            document.getElementById('c3-click-zone').style.display = 'none';
+            const front = document.getElementById('img-front');
+            front.className = 'reader-content show';
+            front.style.clipPath = 'none';
+            updateReaderVisuals();
+            document.getElementById('reader-view').style.display = 'block';
+        }
+
+        function enterC3Reader() {
+            c3Step = 0;
+            document.getElementById('nav-zones').style.display = 'none';
+            document.getElementById('c3-click-zone').style.display = 'block';
+            const front = document.getElementById('img-front');
+            front.className = 'reader-content show c3-full-img';
+            front.style.backgroundImage = 'url(cover4.jpg)';
+            front.style.clipPath = 'inset(0 0 100% 0)';
+            document.getElementById('reader-view').style.display = 'block';
+            setTimeout(nextC3Step, 500);
+        }
+
+        function nextC3Step() {
+            if (c3Step < c3Clips.length) {
+                document.getElementById('img-front').style.clipPath = c3Clips[c3Step];
+                c3Step++;
+            } else { showThanks(); }
+        }
+
+        function changeBlock(step) {
+            if (curCover === 3) return;
+            if (curCover === 2 && curBlock === 8 && step === 1) { showThanks(); return; }
+            const front = document.getElementById('img-front'), back = document.getElementById('img-back');
+            back.style.backgroundImage = front.style.backgroundImage;
+            back.style.backgroundPosition = front.style.backgroundPosition;
+            back.style.opacity = '1'; back.style.transition = 'none';
+            front.classList.remove('show'); front.style.transition = 'none';
+            curBlock = (curBlock + step + 9) % 9;
+            setTimeout(() => {
+                front.style.transition = 'opacity 1s ease, transform 1s ease';
+                updateReaderVisuals(); front.classList.add('show');
+                back.style.transition = 'opacity 1s ease'; back.style.opacity = '0';
+            }, 50);
+        }
+
+        function updateReaderVisuals() {
+            const front = document.getElementById('img-front');
+            front.style.backgroundImage = `url(cover${curCover + 1}.jpg)`;
+            front.style.backgroundPosition = `${(curBlock % 3) * 50}% ${Math.floor(curBlock / 3) * 50}%`;
+            front.style.backgroundSize = '300% 300%';
+        }
+
+        function showThanks() {
+            const screen = document.getElementById('thanks-screen');
+            screen.style.display = 'flex'; setTimeout(() => screen.style.opacity = '1', 50);
+        }
+
+        function exitReader() { document.getElementById('reader-view').style.display = 'none'; }
+        function closeAll() { document.getElementById('awakening-overlay').style.display = 'none'; exitReader(); }
+    </script>
+</body>
+</html>
